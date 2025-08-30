@@ -1,30 +1,35 @@
+import { Link, useRouteLoaderData } from 'react-router-dom';
+
 const TaskDetail = () => {
+  const dashData = useRouteLoaderData('dashboard');
   const handleComplete = () => {
-    console.log("Workout completed! ");
+    console.log('Workout completed! ');
     // Add an API call or other completion logic here.
   };
 
   return (
     <div className="flex min-h-screen bg-[url(../public/e6776ace47454664d5f711b83a7b111fd132edde.jpg)] bg-cover bg-top dark:bg-gray-900">
-      <div class="absolute inset-0 bg-black/50 flex flex-col items-center justify-between p-6 min-h-screen">
+      <div class=" inset-0 bg-black/50 flex flex-col items-center justify-between p-6 min-h-screen min-w-screen">
         {/* Top Section */}
         <div className="w-full max-w-sm flex items-start mt-4">
-          {
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-8 h-8 cursor-pointer text-white dark:text-gray-200"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
-              />
-            </svg>
-          }
+          <Link to="/dashboard">
+            {
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-8 h-8 cursor-pointer text-white dark:text-gray-200"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
+                />
+              </svg>
+            }
+          </Link>
         </div>
 
         {/* Main Content */}
