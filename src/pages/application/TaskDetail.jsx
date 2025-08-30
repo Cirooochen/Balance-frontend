@@ -1,10 +1,19 @@
 import { Link, useRouteLoaderData } from 'react-router-dom';
+import { SwipeableButton } from 'react-swipeable-button';
 
 const TaskDetail = () => {
   const dashData = useRouteLoaderData('dashboard');
   const handleComplete = () => {
     console.log('Workout completed! ');
     // Add an API call or other completion logic here.
+  };
+
+  const onSuccess = () => {
+    console.log('Successfully Swiped!');
+  };
+
+  const onFailure = () => {
+    console.log('Failed to Swipe!');
   };
 
   return (
@@ -93,13 +102,22 @@ const TaskDetail = () => {
           </div>
         </section>
 
-        {/* Simple complete button */}
-        <button
-          onClick={handleComplete}
-          className="w-full mb-2 max-w-sm h-14 bg-green-600 rounded-full flex items-center justify-center space-x-2 text-white font-semibold shadow-lg transition-all duration-200 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-        >
-          <span>Complete Task</span>
-        </button>
+        <div class="p-4">
+          <SwipeableButton
+            onSuccess={onSuccess}
+            onFailure={onFailure}
+            noAnimate={false} //default is false
+            text="Swipe to complete"
+            text_unlocked="You did it!"
+            autoWidth={false}
+            textColor="#ffffff"
+            sliderColor="#09a777"
+            sliderTextColor="#ffff" //default is #fff
+            sliderIconColor="#fff" //default is #fff
+            background_color="#594ffb" //default is #eee
+            name="react-swipeable-button"
+          />
+        </div>
       </div>
     </div>
   );
