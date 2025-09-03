@@ -1,16 +1,16 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import customFetch from "../utils/customFetch";
 import { toast } from "react-toastify";
 
-export const DashboardContext = createContext();
+export const DashboardContext = createContext(null);
 
-const DashboardContextProvider = ({ children, initialUser }) => {
+export default function DashboardContextProvider({ children, initialUser }) {
   const navigate = useNavigate();
-  const [user, setUser] = useState(initialUser);
+  const [user, setUser] = useState(initialUser || null);
 
   useEffect(() => {
-    setUser(initialUser);
+    setUser(initialUser || null);
   }, [initialUser]);
 
   const logoutUser = async () => {
@@ -23,9 +23,15 @@ const DashboardContextProvider = ({ children, initialUser }) => {
   };
 
   return (
-    <DashboardContext.Provider value={{ logoutUser, user }}>
+    <DashboardContext.Provider value={{ user, setUser, logoutUser }}>
       {children}
     </DashboardContext.Provider>
   );
-};
-export default DashboardContextProvider;
+}
+
+// ✅ simple hook so imports like `useDashboardContext` work
+export function useDashboardContext() {
+  const ctx = useContext(DashboardContext);
+  if (!ctx) throw new Error("useDashboardContext must be used inside provider");
+  return ctx;
+}

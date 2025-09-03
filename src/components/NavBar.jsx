@@ -6,7 +6,6 @@ export function Navbar() {
   // Will be undefined on public pages, defined on /dashboard*
   const dashData = useRouteLoaderData("dashboard");
   const user = dashData?.user ?? null;
-  console.log("Navbar user:", user);
   const { logoutUser } = useContext(DashboardContext);
 
   return (

@@ -1,160 +1,131 @@
-import { useState } from "react";
-import { Minus, Plus } from "lucide-react";
+// src/pages/application/AllowanceForm.jsx
+import React, { useState } from "react";
+import { Form, useLoaderData, useNavigation, redirect } from "react-router-dom";
+import customFetch from "../../utils/customFetch";
 
-const AllowanceForm = () => {
-  //Dummy data for allowances
-  const [allowances, setAllowances] = useState([
-    {
-      id: "fast-food",
-      emoji: "🍔",
-      name: "Fast food",
-      frequency: 0,
-      unit: "times/week",
-    },
-    {
-      id: "desert",
-      emoji: "🧁",
-      name: "Desert",
-      frequency: 0,
-      unit: "times/week",
-    },
-    {
-      id: "sugary-beverage",
-      emoji: "🥤",
-      name: "Sugary Beverage",
-      frequency: 0,
-      unit: "cups/day",
-    },
-    {
-      id: "alcohol",
-      emoji: "🍷",
-      name: "Alcohol",
-      frequency: 0,
-      unit: "cups/day",
-    },
-    {
-      id: "party",
-      emoji: "🎭",
-      name: "Party",
-      frequency: 0,
-      unit: "times/week",
-    },
-    {
-      id: "binge-watching",
-      emoji: "📺",
-      name: "Binge-watching",
-      frequency: 0,
-      unit: "times/week",
-    },
-    {
-      id: "video-games",
-      emoji: "🎮",
-      name: "Video Games (Extended)",
-      frequency: 0,
-      unit: "times/week",
-    },
-    {
-      id: "social-media",
-      emoji: "📱",
-      name: "Social Media Scrolling (Hours)",
-      frequency: 0,
-      unit: "hours/week",
-    },
-  ]);
+/* ---------- loader: categories + items ---------- */
+export async function allowanceLoader() {
+  const { data } = await customFetch.get("/allowances/indulgences");
+  return data; // { categories: [...] }
+}
 
-  const updateFrequency = (id, change) => {
-    setAllowances((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? { ...item, frequency: Math.max(0, item.frequency + change) }
-          : item
-      )
+/* ---------- action: call AI, stash result, go to aiplan ---------- */
+export async function allowanceAction({ request }) {
+  const form = await request.formData();
+
+  const indulgences = [];
+  for (const [k, v] of form.entries()) {
+    if (!k.startsWith("count-")) continue;
+    const key = k.slice("count-".length);
+    const n = Number(v || 0);
+    if (n <= 0) continue;
+
+    const t = form.get(`type-${key}`) || "timesPerWeek";
+    indulgences.push(
+      t === "hoursPerDay"
+        ? { category: key, hoursPerDay: n }
+        : { category: key, timesPerWeek: n }
     );
-  };
+  }
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    //Prepare data to be sent to backend
-  };
+  // POST to /ai/plan at the server root (NOT /api/v1)
+  const AI_BASE = customFetch.defaults.baseURL.replace(/\/api\/v1$/, "");
+  const { data: payload } = await customFetch.post(
+    "/ai/plan",
+    { indulgences }, // ✅ correct body shape
+    { baseURL: AI_BASE } // ✅ correct base (server root)
+  );
 
-  const categories = [
-    { title: "Food", unit: "times/week", items: allowances.slice(0, 2) },
-    { title: "Drink", unit: "cups/day", items: allowances.slice(2, 4) },
-    { title: "Social", unit: "times/week", items: allowances.slice(4, 5) },
-    {
-      title: "Entertainment",
-      unit: "times/week",
-      items: allowances.slice(5, 7),
-    },
-    { title: "Mental", unit: "hours/week", items: allowances.slice(7, 8) },
-  ];
+  sessionStorage.setItem("last_ai_plan", JSON.stringify(payload));
+  return redirect("/dashboard/aiplan"); // ✅ absolute path
+}
+
+/* ------------------------ UI ------------------------ */
+export default function AllowanceForm() {
+  const { categories } = useLoaderData();
+  const nav = useNavigation();
 
   return (
-    <div className="min-h-screen bg-[#ffffff] px-6 py-8">
-      <div className="max-w-md mx-auto">
-        <h1 className="text-gray-900 text-2xl font-semibold mb-8">
-          Set Your Weekly Allowance
-        </h1>
+    <div className="mx-auto max-w-[680px] p-4">
+      <h1 className="text-2xl font-bold mb-2">Set Your Weekly Allowance</h1>
+      <p className="text-sm text-slate-400 mb-4">
+        Pick items and set weekly amounts.
+      </p>
 
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-8">
-            {/* Map category, then map allowance items*/}
-            {categories.map((category) => (
-              <div key={category.title}>
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-gray-700 text-lg font-medium">
-                    {category.title}
-                  </h2>
-                  <span className="text-gray-500 text-sm">{category.unit}</span>
-                </div>
+      <Form method="post" replace>
+        {categories.map((cat) => (
+          <section key={cat._id} className="mt-6">
+            <div className="text-[13px] uppercase tracking-wide text-slate-400 mb-2">
+              {cat.name}
+            </div>
 
-                {/* Allowance item List */}
-                <div className="space-y-3">
-                  {category.items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="bg-gray-50 rounded-xl px-4 py-4 flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <span className="text-xl">{item.emoji}</span>
-                        <span className="text-gray-700 font-medium">
-                          {item.name}
-                        </span>
-                      </div>
+            <div className="grid gap-3">
+              {cat.items.map((item) => (
+                <ItemRow key={item.key} item={item} />
+              ))}
+            </div>
+          </section>
+        ))}
 
-                      <div className="flex items-center gap-4">
-                        <button
-                          onClick={() => updateFrequency(item.id, -1)}
-                          className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 hover:bg-gray-300  active:bg-gray-500 transition-colors"
-                        >
-                          <Minus className="w-4 h-4 text-gray-400" />
-                        </button>
-                        <span className="text-gray-600 w-4 text-center text-md">
-                          {item.frequency}
-                        </span>
-                        <button
-                          onClick={() => updateFrequency(item.id, 1)}
-                          className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 hover:bg-gray-300  active:bg-gray-500 transition-colors"
-                        >
-                          <Plus className="w-4 h-4 text-gray-400" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-[#009b7a] text-white font-medium py-4 rounded-full mt-12 hover:bg-emerald-800 transition-colors"
-          >
-            Continue
-          </button>
-        </form>
-      </div>
+        <button
+          type="submit"
+          disabled={nav.state === "submitting"}
+          className="mt-6 w-full rounded-xl bg-gradient-to-r from-violet-600 to-cyan-400 text-slate-900 font-bold py-3 disabled:opacity-70"
+        >
+          {nav.state === "submitting" ? "Creating plan…" : "Continue"}
+        </button>
+      </Form>
     </div>
   );
-};
-export default AllowanceForm;
+}
+
+function ItemRow({ item }) {
+  const [count, setCount] = useState(0);
+
+  // Treat screen/gaming items as hours/day; everything else times/week
+  const isHours =
+    /screen|scroll|gaming|video/i.test(item.key) || /hour/i.test(item.name);
+  const unitLabel = isHours ? "hours/day" : "times/week";
+  const max = isHours ? 24 : 21;
+
+  const dec = () => setCount((n) => Math.max(0, n - 1));
+  const inc = () => setCount((n) => Math.min(max, n + 1));
+
+  return (
+    <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/40 backdrop-blur-sm px-4 py-3">
+      <div className="flex items-center gap-3">
+        <span className="text-lg">{item.emoji || "•"}</span>
+        <div>
+          <div className="font-semibold">{item.name}</div>
+          <div className="text-xs text-slate-400">{unitLabel}</div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={dec}
+          className="w-9 h-9 grid place-items-center rounded-lg border border-slate-700 bg-slate-900 text-slate-100"
+        >
+          –
+        </button>
+        <div className="w-10 text-center font-bold">{count}</div>
+        <button
+          type="button"
+          onClick={inc}
+          className="w-9 h-9 grid place-items-center rounded-lg border border-slate-700 bg-slate-900 text-slate-100"
+        >
+          +
+        </button>
+      </div>
+
+      {/* Hidden fields for the action */}
+      <input type="hidden" name={`count-${item.key}`} value={count} />
+      <input
+        type="hidden"
+        name={`type-${item.key}`}
+        value={isHours ? "hoursPerDay" : "timesPerWeek"}
+      />
+    </div>
+  );
+}

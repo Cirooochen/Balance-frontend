@@ -11,6 +11,8 @@ export const loginAction = async ({ request }) => {
     await customFetch.post("/auth/login", data);
     toast.success("User logged in Successfully");
     console.log("Login successful, redirecting to dashboard...");
+    sessionStorage.removeItem("last_ai_plan");
+    sessionStorage.removeItem("active_plan");
     return redirect("/dashboard");
   } catch (error) {
     toast.error(error?.response?.data?.message || "Login failed");
@@ -51,6 +53,7 @@ export default function Login() {
                     <input
                       name="email"
                       type="email"
+                      defaultValue="param@test.com"
                       placeholder="you@balance.app"
                       className="w-full bg-transparent text-slate-100 placeholder-slate-500 outline-none"
                       required
@@ -67,6 +70,7 @@ export default function Login() {
                     <FiLock className="text-slate-400 text-lg" />
                     <input
                       name="password"
+                      defaultValue="user123!"
                       type={showPw ? "text" : "password"}
                       placeholder="••••••••"
                       className="w-full bg-transparent text-slate-100 placeholder-slate-500 outline-none"
